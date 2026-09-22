@@ -1,0 +1,32 @@
+{
+  "name": "homebridge-aqara-ac",
+  "version": "0.1.0",
+  "description": "An infrared air conditioner behind an Aqara hub, as a HomeKit thermostat with a real AUTO band",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "homebridge": "^1.8.0 || ^2.0.0",
+    "node": "^20 || ^22 || ^24"
+  },
+  "scripts": {
+    "test": "node --test",
+    "recon": "node tools/recon.js"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "aqara",
+    "air-conditioner",
+    "thermostat",
+    "infrared"
+  ],
+  "license": "MIT",
+  "displayName": "Aqara AC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lirik44/homebridge-aqara-ac.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lirik44/homebridge-aqara-ac/issues"
+  },
+  "homepage": "https://github.com/lirik44/homebridge-aqara-ac#readme"
+}

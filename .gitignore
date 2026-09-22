@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+
+# What the recon tools leave behind: device ids, room names, the layout of a home.
+recon-dump.json
+recon-out.txt
+probe-ir-dump.json
+ac-traits.json

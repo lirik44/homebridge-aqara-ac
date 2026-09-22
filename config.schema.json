@@ -1,0 +1,90 @@
+{
+  "pluginAlias": "AqaraAC",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "An infrared air conditioner behind an Aqara hub, as a HomeKit thermostat. AUTO holds the room between two temperatures using the hub's own thermometer.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "title": "Aqara account",
+        "type": "string",
+        "required": true
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "required": true,
+        "x-schema-form": { "type": "password" }
+      },
+      "region": {
+        "title": "Region",
+        "type": "string",
+        "default": "RU",
+        "oneOf": [
+          { "title": "Russia", "enum": ["RU"] },
+          { "title": "Europe", "enum": ["EU"] },
+          { "title": "United States", "enum": ["US"] },
+          { "title": "China", "enum": ["CN"] },
+          { "title": "Korea", "enum": ["KR"] },
+          { "title": "Australia", "enum": ["AU"] }
+        ],
+        "description": "The region the account lives in, which is not always where you are - the device list is empty on the wrong one."
+      },
+      "name": {
+        "title": "Name in HomeKit",
+        "type": "string",
+        "placeholder": "Air Conditioner"
+      },
+      "hubDid": {
+        "title": "Hub device id",
+        "type": "string",
+        "placeholder": "found automatically",
+        "description": "Only needed when the account has more than one hub with a matched air conditioner."
+      },
+      "autoTargetTemperature": {
+        "title": "Setpoint used in AUTO",
+        "type": "integer",
+        "default": 22,
+        "minimum": 16,
+        "maximum": 32,
+        "description": "The band decides when the air conditioner runs; this decides how hard it works while it does."
+      },
+      "autoFanSpeed": {
+        "title": "Fan speed used in AUTO",
+        "type": "integer",
+        "default": 1,
+        "minimum": 1,
+        "maximum": 4
+      },
+      "deadband": {
+        "title": "Deadband",
+        "type": "number",
+        "default": 0.2,
+        "minimum": 0,
+        "maximum": 2,
+        "description": "How far past a threshold the room must go before anything is switched, so a sensor that jitters on the boundary does not cycle the unit."
+      },
+      "temperatureStep": {
+        "title": "Slider step",
+        "type": "number",
+        "default": 1,
+        "oneOf": [
+          { "title": "1 degree", "enum": [1] },
+          { "title": "Half a degree", "enum": [0.5] }
+        ]
+      },
+      "refreshSeconds": {
+        "title": "How often to read the room",
+        "type": "integer",
+        "default": 60,
+        "minimum": 15
+      },
+      "showHumidity": {
+        "title": "Show the hub's humidity as a sensor",
+        "type": "boolean",
+        "default": true
+      }
+    }
+  }
+}
