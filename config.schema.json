@@ -87,7 +87,8 @@
         "type": "integer",
         "default": 1,
         "minimum": 1,
-        "maximum": 4
+        "maximum": 4,
+        "description": "1 is Low, which is what the remote calls S1. AUTO always uses this, whether or not the slider is shown."
       },
       "deadband": {
         "title": "Deadband",
@@ -127,6 +128,47 @@
         "title": "Show the hub's humidity as a sensor",
         "type": "boolean",
         "default": true
+      },
+      "showFanSpeed": {
+        "title": "Show a fan speed slider",
+        "type": "boolean",
+        "default": false,
+        "description": "Off by default: AUTO picks the speed itself, and a slider reports every position a finger passes through."
+      },
+      "minTemperature": {
+        "title": "Coldest the band can be set to",
+        "type": "number",
+        "default": 16,
+        "minimum": 16,
+        "maximum": 32
+      },
+      "maxTemperature": {
+        "title": "Warmest the band can be set to",
+        "type": "number",
+        "default": 32,
+        "minimum": 16,
+        "maximum": 32
+      },
+      "defaultLow": {
+        "title": "Band starts at (low)",
+        "type": "number",
+        "default": 20,
+        "minimum": 16,
+        "maximum": 32
+      },
+      "defaultHigh": {
+        "title": "Band starts at (high)",
+        "type": "number",
+        "default": 26,
+        "minimum": 16,
+        "maximum": 32
+      },
+      "settleMs": {
+        "title": "Wait after the band stops moving, ms",
+        "type": "integer",
+        "default": 3000,
+        "minimum": 500,
+        "description": "Dragging the band sends no requests at all; this is how long after your finger stops before anything is acted on."
       }
     }
   }
