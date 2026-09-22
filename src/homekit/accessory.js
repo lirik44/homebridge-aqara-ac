@@ -274,7 +274,7 @@ export default class AirConditionerAccessory {
 
     if (!active) {
       this.auto.sync(false);
-      await this.command(() => this.device.setPower(false));
+      await this.command(() => this.device.setPower(false, { force: true }));
       this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.INACTIVE);
       return;
     }
@@ -385,7 +385,9 @@ export default class AirConditionerAccessory {
   async startCooling(setpoint) {
     await this.device.setMode(MODE.cool);
     await this.device.setTargetTemperature(setpoint);
-    await this.device.setPower(true);
+    // Forced, because the hub stays silent when it already believes what it is being told, and
+    // its belief drifts - which leaves an air conditioner running through every attempt to stop it.
+    await this.device.setPower(true, { force: true });
     this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.COOLING);
   }
 
@@ -422,7 +424,7 @@ export default class AirConditionerAccessory {
         '%s: %s°C is within the band %s-%s, switching off',
         this.accessory.displayName, state?.roomTemperature, band.low, band.high,
       );
-      await this.command(() => this.device.setPower(false));
+      await this.command(() => this.device.setPower(false, { force: true }));
       this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.IDLE);
     }
   }

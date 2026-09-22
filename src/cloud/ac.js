@@ -113,11 +113,55 @@ export default class AqaraAirConditioner {
   }
 
   /**
+   * Switching the air conditioner on or off.
+   *
+   * The hub only sends an infrared frame when the value it holds actually changes. Writing "off"
+   * to a hub that already believes it is off does nothing at all - it answers Success and stays
+   * silent - and since its belief drifts, that is how a running air conditioner ends up ignoring
+   * every attempt to stop it.
+   *
+   * So when the hub already holds what is being asked for and this plugin knows better, it is
+   * moved through the other value first. Two frames rather than none.
+   *
    * @param {boolean} on Whether the air conditioner should run.
+   * @param {object} [options] How hard to insist.
+   * @param {boolean} [options.force] Make the hub send a frame even if it thinks nothing changed.
    * @returns {Promise<void>} Resolves once it has been told.
    */
-  async setPower(on) {
-    return this.write(TRAIT.power, on ? POWER_ON : POWER_OFF);
+  async setPower(on, { force = false } = {}) {
+    const wanted = on ? POWER_ON : POWER_OFF;
+
+    if (force) {
+      const held = await this.readPower();
+
+      if (held === wanted) {
+        await this.write(TRAIT.power, on ? POWER_OFF : POWER_ON);
+      }
+    }
+
+    return this.write(TRAIT.power, wanted);
+  }
+
+  /**
+   * @returns {Promise<string|undefined>} What the hub currently holds for power, raw.
+   */
+  async readPower() {
+    return this.serialise(async () => {
+      const [trait] = await this.cloud.readTraits(await this.getToken(), this.did, [TRAIT.power]);
+      return trait?.value;
+    });
+  }
+
+  /**
+   * Whether the hub's idea of the power differs from what this plugin last commanded. While they
+   * disagree, a command that matches the hub's belief goes out as silence.
+   *
+   * @param {object} state What {@link read} returned.
+   * @returns {boolean} Whether the two have drifted apart.
+   */
+  hasDrifted(state) {
+    const commanded = this.commanded[TRAIT.power];
+    return commanded !== undefined && state.power !== (commanded === POWER_ON);
   }
 
   /**
