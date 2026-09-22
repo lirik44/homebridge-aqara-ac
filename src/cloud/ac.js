@@ -120,26 +120,19 @@ export default class AqaraAirConditioner {
    * silent - and since its belief drifts, that is how a running air conditioner ends up ignoring
    * every attempt to stop it.
    *
-   * So when the hub already holds what is being asked for and this plugin knows better, it is
-   * moved through the other value first. Two frames rather than none.
+   * Going through the other value first to force a frame is NOT the answer, however tempting: to
+   * switch the air conditioner off it would have to switch it on, and the off that follows a second
+   * later arrives while the unit is still waking and is ignored. Pressing off then starts the air
+   * conditioner, which is worse than the silence it was meant to cure.
+   *
+   * Instead the hub's belief is kept in step with ours as we go - see {@link hasDrifted} - so that
+   * by the time anyone asks for off, the hub holds on, and one write is a real change.
    *
    * @param {boolean} on Whether the air conditioner should run.
-   * @param {object} [options] How hard to insist.
-   * @param {boolean} [options.force] Make the hub send a frame even if it thinks nothing changed.
    * @returns {Promise<void>} Resolves once it has been told.
    */
-  async setPower(on, { force = false } = {}) {
-    const wanted = on ? POWER_ON : POWER_OFF;
-
-    if (force) {
-      const held = await this.readPower();
-
-      if (held === wanted) {
-        await this.write(TRAIT.power, on ? POWER_OFF : POWER_ON);
-      }
-    }
-
-    return this.write(TRAIT.power, wanted);
+  async setPower(on) {
+    return this.write(TRAIT.power, on ? POWER_ON : POWER_OFF);
   }
 
   /**

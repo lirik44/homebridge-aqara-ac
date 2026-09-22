@@ -287,7 +287,7 @@ export default class AirConditionerAccessory {
 
     if (!active) {
       this.auto.sync(false);
-      await this.command(() => this.device.setPower(false, { force: true }));
+      await this.command(() => this.device.setPower(false));
       this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.INACTIVE);
       return;
     }
@@ -398,9 +398,7 @@ export default class AirConditionerAccessory {
   async startCooling(setpoint) {
     await this.device.setMode(MODE.cool);
     await this.device.setTargetTemperature(setpoint);
-    // Forced, because the hub stays silent when it already believes what it is being told, and
-    // its belief drifts - which leaves an air conditioner running through every attempt to stop it.
-    await this.device.setPower(true, { force: true });
+    await this.device.setPower(true);
     this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.COOLING);
   }
 
@@ -437,7 +435,7 @@ export default class AirConditionerAccessory {
         '%s: %s°C is within the band %s-%s, switching off',
         this.accessory.displayName, state?.roomTemperature, band.low, band.high,
       );
-      await this.command(() => this.device.setPower(false, { force: true }));
+      await this.command(() => this.device.setPower(false));
       this.show(this.Characteristic.CurrentHeaterCoolerState, this.Characteristic.CurrentHeaterCoolerState.IDLE);
     }
   }
@@ -484,6 +482,20 @@ export default class AirConditionerAccessory {
   async poll() {
     try {
       this.lastState = await this.device.read();
+
+      // The hub only transmits when the value it holds changes, and its belief drifts on its own.
+      // Left alone, it drifts to "off" while the unit runs, and the next off command matches what
+      // it already holds and is never transmitted. Putting it back in step costs one write and
+      // keeps every later command a real change.
+      if (this.device.hasDrifted(this.lastState)) {
+        this.log.info(
+          '%s: the hub had drifted to %s, putting it back',
+          this.accessory.displayName, this.lastState.power ? 'on' : 'off',
+        );
+        await this.command(() => this.device.setPower(!this.lastState.power));
+        this.lastState.power = !this.lastState.power;
+      }
+
       this.report(this.lastState);
 
       // A command on its way to the hub is more recent than anything just read, and the loop
