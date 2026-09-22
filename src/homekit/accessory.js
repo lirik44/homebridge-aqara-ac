@@ -43,11 +43,22 @@ export default class AirConditionerAccessory {
       .onSet(value => this.setTargetState(value));
 
     // The two ends of the band. In COOL only the cooling end is used, as the setpoint.
+    //
+    // Half a degree, because the band is this plugin's own to keep - it is compared against the
+    // hub's thermometer, which reads hundredths, and never sent to the air conditioner as it
+    // stands. The setpoint that does reach the remote is rounded on the way out, since the trait
+    // only takes whole degrees.
     for (const characteristic of [Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature]) {
       this.service.getCharacteristic(characteristic)
-        .setProps({ minValue: 16, maxValue: 32, minStep: platform.config.temperatureStep ?? 1 })
+        .setProps({ minValue: 16, maxValue: 32, minStep: platform.config.temperatureStep ?? 0.5 })
         .onSet(value => this.setThreshold(characteristic, value));
     }
+
+    // A brand new accessory arrives holding HomeKit's own defaults, which sit outside what this
+    // air conditioner accepts and would show as a band spanning the whole dial. A restored one
+    // keeps whatever it was last set to.
+    this.settleThreshold(Characteristic.HeatingThresholdTemperature, platform.config.defaultLow ?? 20);
+    this.settleThreshold(Characteristic.CoolingThresholdTemperature, platform.config.defaultHigh ?? 26);
 
     // Four speeds, so each quarter of the slider is one of them.
     this.service.getCharacteristic(Characteristic.RotationSpeed)
@@ -57,6 +68,23 @@ export default class AirConditionerAccessory {
     if (platform.config.showHumidity !== false) {
       this.humidity = accessory.getService(Service.HumiditySensor)
         ?? accessory.addService(Service.HumiditySensor, `${accessory.displayName} Humidity`);
+    }
+  }
+
+  /**
+   * Gives one end of the band a starting value, but only when what it holds is not a value this
+   * air conditioner could have been set to - which is how a fresh accessory is told apart from one
+   * restored with the band someone chose.
+   *
+   * @param {*} characteristic Which end.
+   * @param {number} value What to start it at.
+   * @returns {void}
+   */
+  settleThreshold(characteristic, value) {
+    const current = this.service.getCharacteristic(characteristic).value;
+
+    if (!Number.isFinite(current) || current < 16 || current > 32) {
+      this.service.updateCharacteristic(characteristic, value);
     }
   }
 

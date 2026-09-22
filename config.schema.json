@@ -15,19 +15,51 @@
         "title": "Password",
         "type": "string",
         "required": true,
-        "x-schema-form": { "type": "password" }
+        "x-schema-form": {
+          "type": "password"
+        }
       },
       "region": {
         "title": "Region",
         "type": "string",
         "default": "RU",
         "oneOf": [
-          { "title": "Russia", "enum": ["RU"] },
-          { "title": "Europe", "enum": ["EU"] },
-          { "title": "United States", "enum": ["US"] },
-          { "title": "China", "enum": ["CN"] },
-          { "title": "Korea", "enum": ["KR"] },
-          { "title": "Australia", "enum": ["AU"] }
+          {
+            "title": "Russia",
+            "enum": [
+              "RU"
+            ]
+          },
+          {
+            "title": "Europe",
+            "enum": [
+              "EU"
+            ]
+          },
+          {
+            "title": "United States",
+            "enum": [
+              "US"
+            ]
+          },
+          {
+            "title": "China",
+            "enum": [
+              "CN"
+            ]
+          },
+          {
+            "title": "Korea",
+            "enum": [
+              "KR"
+            ]
+          },
+          {
+            "title": "Australia",
+            "enum": [
+              "AU"
+            ]
+          }
         ],
         "description": "The region the account lives in, which is not always where you are - the device list is empty on the wrong one."
       },
@@ -68,11 +100,22 @@
       "temperatureStep": {
         "title": "Slider step",
         "type": "number",
-        "default": 1,
+        "default": 0.5,
         "oneOf": [
-          { "title": "1 degree", "enum": [1] },
-          { "title": "Half a degree", "enum": [0.5] }
-        ]
+          {
+            "title": "Half a degree",
+            "enum": [
+              0.5
+            ]
+          },
+          {
+            "title": "1 degree",
+            "enum": [
+              1
+            ]
+          }
+        ],
+        "description": "How finely the band can be set. The band is compared against the hub's own thermometer, so half a degree is meaningful even though the remote itself only takes whole ones."
       },
       "refreshSeconds": {
         "title": "How often to read the room",
