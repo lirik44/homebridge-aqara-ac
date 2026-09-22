@@ -105,11 +105,15 @@ export default class AirConditionerAccessory {
         .onSet(value => this.setThreshold(characteristic, value));
     }
 
-    // A brand new accessory arrives holding HomeKit's own defaults, which sit outside what this
-    // air conditioner accepts and would show as a band spanning the whole dial. A restored one
-    // keeps whatever it was last set to.
-    this.settleThreshold(Characteristic.HeatingThresholdTemperature, platform.config.defaultLow ?? 20);
-    this.settleThreshold(Characteristic.CoolingThresholdTemperature, platform.config.defaultHigh ?? 26);
+    // A brand new accessory arrives holding HomeKit's own defaults - 10 and 35 - and setProps has
+    // just clamped them into what this air conditioner takes, so they read as exactly the two ends
+    // of the range. That is a band nobody would choose: at 16-32 the unit only runs above 32
+    // degrees, which is to say never. Treat the full span as "not set yet" and offer something
+    // usable instead. A restored accessory keeps whatever band was actually chosen.
+    this.settleBand({
+      low: platform.config.defaultLow ?? 20,
+      high: platform.config.defaultHigh ?? 26,
+    }, { minValue, maxValue });
 
     // The fan slider is off by default. AUTO sets the speed itself and nothing else here needs it,
     // so the tile is cleaner without it - and a slider nobody wanted is still a slider that
@@ -133,20 +137,32 @@ export default class AirConditionerAccessory {
   }
 
   /**
-   * Gives one end of the band a starting value, but only when what it holds is not a value this
-   * air conditioner could have been set to - which is how a fresh accessory is told apart from one
-   * restored with the band someone chose.
+   * Gives the band a starting width, but only when what it holds is the whole allowed range - which
+   * is what HomeKit's own defaults become once setProps has clamped them, and is not a band anyone
+   * would set on purpose.
    *
-   * @param {*} characteristic Which end.
-   * @param {number} value What to start it at.
+   * @param {{low: number, high: number}} band What to start at.
+   * @param {{minValue: number, maxValue: number}} bounds What the slider allows.
    * @returns {void}
    */
-  settleThreshold(characteristic, value) {
-    const current = this.service.getCharacteristic(characteristic).value;
+  settleBand({ low, high }, { minValue, maxValue }) {
+    const { CoolingThresholdTemperature, HeatingThresholdTemperature } = this.Characteristic;
+    const currentLow = this.service.getCharacteristic(HeatingThresholdTemperature).value;
+    const currentHigh = this.service.getCharacteristic(CoolingThresholdTemperature).value;
 
-    if (!Number.isFinite(current) || current < 16 || current > 32) {
-      this.service.updateCharacteristic(characteristic, value);
+    const unusable = !Number.isFinite(currentLow) || !Number.isFinite(currentHigh)
+      || (currentLow <= minValue && currentHigh >= maxValue);
+
+    if (!unusable) {
+      return;
     }
+
+    this.log.info(
+      '%s: no band chosen yet, starting at %s-%s',
+      this.accessory.displayName, low, high,
+    );
+    this.service.updateCharacteristic(HeatingThresholdTemperature, Math.max(minValue, low));
+    this.service.updateCharacteristic(CoolingThresholdTemperature, Math.min(maxValue, high));
   }
 
   /** @returns {{low: number, high: number}} The band HomeKit is currently asking for. */
