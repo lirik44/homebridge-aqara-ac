@@ -93,11 +93,12 @@ export default class AirConditionerAccessory {
     // stands. The setpoint that does reach the remote is rounded on the way out, since the trait
     // only takes whole degrees.
     //
-    // The bounds are narrowed to taste: what the remote accepts is 16-32, and dragging across all
-    // of it to reach the four degrees anyone actually uses is a chore. Anything outside what the
-    // remote takes is ignored rather than honoured.
-    const minValue = clamp(platform.config.minTemperature ?? 16);
-    const maxValue = clamp(platform.config.maxTemperature ?? 32);
+    // The dial spans 20-26, not the 16-32 the remote accepts. Six degrees is the range a bedroom
+    // is ever set to, and giving the slider the whole span the hardware allows means a lot of
+    // dragging to reach them - the same conclusion the Sensibo fork came to. Anything configured
+    // outside what the remote takes is ignored rather than honoured.
+    const minValue = clamp(platform.config.minTemperature ?? 20);
+    const maxValue = clamp(platform.config.maxTemperature ?? 26);
 
     for (const characteristic of [Characteristic.CoolingThresholdTemperature, Characteristic.HeatingThresholdTemperature]) {
       this.service.getCharacteristic(characteristic)
@@ -111,8 +112,8 @@ export default class AirConditionerAccessory {
     // degrees, which is to say never. Treat the full span as "not set yet" and offer something
     // usable instead. A restored accessory keeps whatever band was actually chosen.
     this.settleBand({
-      low: platform.config.defaultLow ?? 20,
-      high: platform.config.defaultHigh ?? 26,
+      low: platform.config.defaultLow ?? minValue,
+      high: platform.config.defaultHigh ?? maxValue,
     }, { minValue, maxValue });
 
     // The fan slider is off by default. AUTO sets the speed itself and nothing else here needs it,

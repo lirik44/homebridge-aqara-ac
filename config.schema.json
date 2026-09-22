@@ -138,14 +138,15 @@
       "minTemperature": {
         "title": "Coldest the band can be set to",
         "type": "number",
-        "default": 16,
+        "default": 20,
         "minimum": 16,
-        "maximum": 32
+        "maximum": 32,
+        "description": "The cold end of the dial. Narrower than the 16-32 the remote accepts, because that is a lot of dragging to reach the few degrees a bedroom uses."
       },
       "maxTemperature": {
         "title": "Warmest the band can be set to",
         "type": "number",
-        "default": 32,
+        "default": 26,
         "minimum": 16,
         "maximum": 32
       },
@@ -154,7 +155,8 @@
         "type": "number",
         "default": 20,
         "minimum": 16,
-        "maximum": 32
+        "maximum": 32,
+        "description": "Where the band starts on an accessory that has never had one set. Defaults to the ends of the dial."
       },
       "defaultHigh": {
         "title": "Band starts at (high)",
