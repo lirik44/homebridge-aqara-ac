@@ -171,6 +171,11 @@
         "default": 3000,
         "minimum": 500,
         "description": "Dragging the band sends no requests at all; this is how long after your finger stops before anything is acted on."
+      },
+      "accessoryIdSuffix": {
+        "title": "Accessory identity suffix",
+        "type": "string",
+        "description": "Change this to hand HomeKit an accessory it has never seen. Needed after narrowing the dial: HomeKit caches a characteristic's bounds and only re-reads them for a new accessory. The old one is removed automatically, but its room and name have to be set again."
       }
     }
   }

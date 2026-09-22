@@ -60,6 +60,12 @@ export default class AirConditionerAccessory {
     // of changing - which in the Sensibo fork showed up as the accessory switching itself off.
     this.inFlight = 0;
 
+    // What HomeKit last asked for, recorded the moment it asks rather than when the command
+    // finishes. HAP only writes the characteristic once the handler resolves, and a forced power
+    // command takes seconds - long enough for a poll to land, read the characteristic as it was
+    // before, and undo what was just asked for.
+    this.desiredActive = null;
+
     accessory.getService(Service.AccessoryInformation)
       ?.setCharacteristic(Characteristic.Manufacturer, 'Aqara')
       .setCharacteristic(Characteristic.Model, 'Hub M200 infrared air conditioner')
@@ -206,6 +212,10 @@ export default class AirConditionerAccessory {
 
   /** @returns {boolean} Whether HomeKit has the accessory switched on at all. */
   get isActive() {
+    if (this.desiredActive !== null) {
+      return this.desiredActive;
+    }
+
     return this.service.getCharacteristic(this.Characteristic.Active).value
       === this.Characteristic.Active.ACTIVE;
   }
@@ -270,6 +280,9 @@ export default class AirConditionerAccessory {
    * @returns {Promise<void>} Resolves once it has been told.
    */
   async setActive(active) {
+    // Before anything that waits: a poll landing mid-command must see what was asked for, not what
+    // the characteristic still says.
+    this.desiredActive = active;
     this.log.info('%s: HomeKit switched it %s', this.accessory.displayName, active ? 'on' : 'off');
 
     if (!active) {
@@ -473,7 +486,10 @@ export default class AirConditionerAccessory {
       this.lastState = await this.device.read();
       this.report(this.lastState);
 
-      if (this.isActive && this.inAuto) {
+      // A command on its way to the hub is more recent than anything just read, and the loop
+      // acting on the older picture is how an air conditioner switches itself back on a second
+      // after being told to stop.
+      if (this.inFlight === 0 && this.isActive && this.inAuto) {
         await this.applyAuto(this.lastState);
       }
     } catch (error) {

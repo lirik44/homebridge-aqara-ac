@@ -99,7 +99,12 @@ export default class AqaraACPlatform {
     const { did, name } = await this.findAirConditioner();
     const device = new AqaraAirConditioner(this.cloud, did, () => this.token());
 
-    const uuid = this.api.hap.uuid.generate(`aqara-ac-${did}`);
+    // Changing the suffix hands HomeKit an accessory it has never seen, which is the only way to
+    // make it re-read a characteristic's bounds: it caches those and only looks again when the
+    // accessory itself changes, so narrowing the dial otherwise has no visible effect. The old one
+    // is unregistered below as stale, so nothing is left behind.
+    const suffix = this.config.accessoryIdSuffix;
+    const uuid = this.api.hap.uuid.generate(`aqara-ac-${did}${suffix ? `-${suffix}` : ''}`);
     let accessory = this.accessories.find(cached => cached.UUID === uuid);
 
     if (accessory) {
