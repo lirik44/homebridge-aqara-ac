@@ -71,6 +71,15 @@ export default class AirConditionerAccessory {
     this.service.getCharacteristic(Characteristic.Active)
       .onSet(value => this.setActive(value === Characteristic.Active.ACTIVE));
 
+    // Answered, not only pushed. This is what colours the tile - Apple Home draws the numbers blue
+    // while it reads COOLING and grey while it reads IDLE - and HomeKit asks for it whenever the
+    // app is opened, including before the first poll has taken a reading.
+    this.service.getCharacteristic(Characteristic.CurrentHeaterCoolerState)
+      .onGet(() => this.currentState());
+
+    this.service.getCharacteristic(Characteristic.CurrentTemperature)
+      .onGet(() => this.lastState?.roomTemperature ?? 0);
+
     // Cooling only: the remote can heat, but a plugin that offers heat has to decide what AUTO
     // means with both ends live, and this room only ever cools.
     this.service.getCharacteristic(Characteristic.TargetHeaterCoolerState)
@@ -152,6 +161,30 @@ export default class AirConditionerAccessory {
   get inAuto() {
     return this.service.getCharacteristic(this.Characteristic.TargetHeaterCoolerState).value
       === this.Characteristic.TargetHeaterCoolerState.AUTO;
+  }
+
+  /**
+   * What the tile should be showing, which is also what colours it.
+   *
+   * In AUTO the controller is the one switching the unit, so its own idea of whether it is running
+   * is ahead of anything the hub can say - and the hub cannot really say, since infrared gives it
+   * nothing to read back. Switched off at the bottom of the band the accessory is idle, not off:
+   * it is still working, just waiting for the room to come back up.
+   *
+   * @returns {number} One of HomeKit's CurrentHeaterCoolerState values.
+   */
+  currentState() {
+    const { CurrentHeaterCoolerState } = this.Characteristic;
+
+    if (!this.isActive) {
+      return CurrentHeaterCoolerState.INACTIVE;
+    }
+
+    const running = this.inAuto
+      ? this.auto.activity === 'cooling'
+      : this.device.isRunning(this.lastState ?? {});
+
+    return running ? CurrentHeaterCoolerState.COOLING : CurrentHeaterCoolerState.IDLE;
   }
 
   /** @returns {boolean} Whether HomeKit has the accessory switched on at all. */
@@ -403,15 +436,7 @@ export default class AirConditionerAccessory {
       return;
     }
 
-    // In AUTO the controller is the one switching the unit, so its own idea of whether it is
-    // running is ahead of anything the hub can say - and the hub cannot really say, since infrared
-    // gives it nothing to read back.
-    const running = this.inAuto ? this.auto.activity === 'cooling' : this.device.isRunning(state);
-
-    this.show(
-      Characteristic.CurrentHeaterCoolerState,
-      running ? Characteristic.CurrentHeaterCoolerState.COOLING : Characteristic.CurrentHeaterCoolerState.IDLE,
-    );
+    this.show(Characteristic.CurrentHeaterCoolerState, this.currentState());
 
     if (this.showFanSpeed && Number.isFinite(state.fanSpeed)) {
       this.show(Characteristic.RotationSpeed, state.fanSpeed * 25);
